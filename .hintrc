@@ -1,0 +1,31 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "compat-api/css": [
+      "off",
+      {
+        "ignore": [
+          "@layer"
+        ]
+      }
+    ],
+    "axe/forms": [
+      "default",
+      {
+        "select-name": "off"
+      }
+    ],
+    "typescript-config/is-valid": "off"
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not and_chr <= 119",
+    "not chrome <= 119",
+    "not edge <= 119",
+    "not opera <= 104",
+    "not samsung <= 23"
+  ]
+}
