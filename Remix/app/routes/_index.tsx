@@ -71,7 +71,7 @@ export default function Index() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "http://localhost:3000/auth/callback",
+        redirectTo: "https://better-edt.vercel.app/auth/callback",
       },
     });
   };
