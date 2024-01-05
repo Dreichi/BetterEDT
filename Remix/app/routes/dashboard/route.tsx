@@ -146,6 +146,7 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   title: string;
+  salle: string;
 }
 
 export default function Index() {
@@ -222,15 +223,21 @@ export default function Index() {
       }
 
       return {
-        // ...item,
         start: startDate,
         end: endDate,
         title: item.matiere + " - " + item.prof,
+        salle: item.salle,
       };
     });
   };
 
-  function CustomToolbar({ onNavigate, label }) {
+  function CustomToolbar({
+    onNavigate,
+    label,
+  }: {
+    onNavigate: Function;
+    label: string;
+  }) {
     return (
       <div className="rbc-toolbar">
         <span className="rbc-btn-group">
@@ -243,6 +250,15 @@ export default function Index() {
           </button>
         </span>
       </div>
+    );
+  }
+
+  function CustomEvent({ event }: { event: any }) {
+    return (
+      <span>
+        <h1 className="font-bold">{event.title}</h1>
+        <p className="absolute bottom-2"> {event.salle}</p>
+      </span>
     );
   }
 
@@ -276,6 +292,9 @@ export default function Index() {
             className="flex-grow "
             min={new Date(0, 0, 0, 5, 0, 0)}
             max={new Date(0, 0, 0, 20, 0, 0)}
+            components={{
+              event: CustomEvent,
+            }}
           />
         </div>
         <div className="flex lg:hidden calendar-mobile-view">
@@ -293,6 +312,7 @@ export default function Index() {
             max={new Date(0, 0, 0, 20, 0, 0)}
             components={{
               toolbar: CustomToolbar,
+              event: CustomEvent,
             }}
           />
         </div>

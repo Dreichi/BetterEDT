@@ -47,26 +47,6 @@ export default function Index() {
     createBrowserClient(api.supabaseUrl!, api.supabaseKey!)
   );
 
-  const signIn = async (event: any) => {
-    event.preventDefault();
-
-    const email = event.target.email.value;
-    const password = event.target.password.value;
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-
-      if (error) throw error;
-      navigate("/dashboard");
-      toast.success("Connexion réussie");
-    } catch (error) {
-      toast.error("Email ou mot de passe incorrecte");
-    }
-  };
-
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
