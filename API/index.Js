@@ -124,6 +124,7 @@ async function processResponse(response) {
     });
 
     $('.Case').each(async function() {
+        let isExactMatch = false;
         const caseLeftValue = parseFloat($(this).css('left').replace('%', ''));
         let closestJourLeftValue = null;
         let minDifference = 2; 
@@ -166,20 +167,32 @@ async function processResponse(response) {
                 const existingStart = new Date(`${formattedDate} ${existingEvent.startTime}`);
                 const existingEnd = new Date(`${formattedDate} ${existingEvent.endTime}`);
 
-                if ((startDateTime >= existingStart && startDateTime < existingEnd) ||
-                    (endDateTime > existingStart && endDateTime <= existingEnd) ||
-                    (startDateTime <= existingStart && endDateTime >= existingEnd)) {
-                    eventsToDelete.push(existingEvent.id);
-                }
-            });
+              if (startDateTime.getTime() === existingStart.getTime() && 
+                endDateTime.getTime() === existingEnd.getTime() && 
+                salle === existingEvent.salle && 
+                matiere === existingEvent.matiere && 
+                prof === existingEvent.prof && 
+                classe === existingEvent.classe) {
+                isExactMatch = true;
+            }
 
+            if ((startDateTime >= existingStart && startDateTime < existingEnd) ||
+                (endDateTime > existingStart && endDateTime <= existingEnd) ||
+                (startDateTime <= existingStart && endDateTime >= existingEnd)) {
+                eventsToDelete.push(existingEvent.id);
+            }
+        });
+
+        if (isExactMatch) {
+            console.log('Même horaires. Aucun changement');
+        } else {
             if (eventsToDelete.length > 0) {
                 await supabase
                     .from('EDT')
                     .delete()
                     .in('id', eventsToDelete);
 
-                console.log('Événements en conflit supprimés.');
+                console.log('Horaire modifié. Anciens événements supprimés.');
             }
 
             const { error: insertError } = await supabase
@@ -194,5 +207,5 @@ async function processResponse(response) {
                 console.log('Nouvel événement inséré !');
             }
         }
-    });
+ } });
 }
