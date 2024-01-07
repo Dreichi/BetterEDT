@@ -279,17 +279,17 @@ export default function Index() {
             </option>
           ))}
         </select>
-        <div className="hidden lg:flex">
+        <div className="hidden lg:flex h-screen">
           <Calendar
             localizer={localizer}
             events={calendarEvents}
             startAccessor="start"
             endAccessor="end"
-            defaultView="week"
+            defaultView="month"
             style={{ height: "100%" }}
             culture="fr"
             messages={messages}
-            className="flex-grow "
+            className="flex-grow"
             min={new Date(0, 0, 0, 5, 0, 0)}
             max={new Date(0, 0, 0, 20, 0, 0)}
             components={{

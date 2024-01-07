@@ -7,18 +7,20 @@ import { createClient } from '@supabase/supabase-js';
 import { parse, setYear, format, addMonths, startOfToday, getDay, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import cron from 'node-cron';
+import { google } from 'googleapis';
 
-cron.schedule('0 18 * * *', () => {
-    console.log('Exécution de fetchSchedule à 18h chaque jour.');
-    fetchSchedule();
-}, {
-    scheduled: true,
-    timezone: "Europe/Paris" 
-});
+
+// cron.schedule('0 18 * * *', () => {
+//     console.log('Exécution de fetchSchedule à 18h chaque jour.');
+//     fetchSchedule();
+// }, {
+//     scheduled: true,
+//     timezone: "Europe/Paris" 
+// });
 
 
 const postData = querystring.stringify({
-    'username': "damien.jenger",
+    'username': process.env.USERNAMEEDT,
     'password': process.env.PASSWORD,
     '_eventId': 'submit',
     'execution': process.env.EXECUTION_TOKEN
@@ -32,7 +34,6 @@ const oldcookies = 'org.springframework.web.servlet.i18n.CookieLocaleResolver.LO
 
 async function fetchSchedule() {
 
-    console.log(process.env.USERNAME)
     try {
         const response = await got.post('https://ws-edt-cd.wigorservices.net/WebPsDyn.aspx?action=posEDTLMS&serverID=C', {
             headers: {
@@ -84,10 +85,13 @@ async function processTicket(ticket) {
     
     const tuesdays = getTuesdays(today, oneMonthsLater); 
 
-    const nextFourTuesdays = tuesdays.slice(0, 4);
+    const nextFourTuesdays = tuesdays.slice(0, 5);
+
+    console.log(nextFourTuesdays)
         
     for (const tuesday of nextFourTuesdays) {
         const formattedDate = format(tuesday, 'MM/dd/yyyy');
+        console.log(formattedDate)
         const url = `https://ws-edt-cd.wigorservices.net/WebPsDyn.aspx?action=posEDTLMS&date=${formattedDate}`;
 
         try {
@@ -124,6 +128,7 @@ async function processResponse(response) {
     });
 
     $('.Case').each(async function() {
+        let isExactMatch = false;
         const caseLeftValue = parseFloat($(this).css('left').replace('%', ''));
         let closestJourLeftValue = null;
         let minDifference = 2; 
@@ -166,20 +171,32 @@ async function processResponse(response) {
                 const existingStart = new Date(`${formattedDate} ${existingEvent.startTime}`);
                 const existingEnd = new Date(`${formattedDate} ${existingEvent.endTime}`);
 
-                if ((startDateTime >= existingStart && startDateTime < existingEnd) ||
-                    (endDateTime > existingStart && endDateTime <= existingEnd) ||
-                    (startDateTime <= existingStart && endDateTime >= existingEnd)) {
-                    eventsToDelete.push(existingEvent.id);
-                }
-            });
+              if (startDateTime.getTime() === existingStart.getTime() && 
+                endDateTime.getTime() === existingEnd.getTime() && 
+                salle === existingEvent.salle && 
+                matiere === existingEvent.matiere && 
+                prof === existingEvent.prof && 
+                classe === existingEvent.classe) {
+                isExactMatch = true;
+            }
 
+            if ((startDateTime >= existingStart && startDateTime < existingEnd) ||
+                (endDateTime > existingStart && endDateTime <= existingEnd) ||
+                (startDateTime <= existingStart && endDateTime >= existingEnd)) {
+                eventsToDelete.push(existingEvent.id);
+            }
+        });
+
+        if (isExactMatch) {
+            console.log('Même horaires. Aucun changement');
+        } else {
             if (eventsToDelete.length > 0) {
                 await supabase
                     .from('EDT')
                     .delete()
                     .in('id', eventsToDelete);
 
-                console.log('Événements en conflit supprimés.');
+                console.log('Horaire modifié. Anciens événements supprimés.', eventsToDelete);
             }
 
             const { error: insertError } = await supabase
@@ -194,5 +211,7 @@ async function processResponse(response) {
                 console.log('Nouvel événement inséré !');
             }
         }
-    });
+ } });
 }
+
+fetchSchedule();
