@@ -10,13 +10,13 @@ import cron from 'node-cron';
 import { google } from 'googleapis';
 
 
-cron.schedule('0 18 * * *', () => {
-    console.log('Exécution de fetchSchedule à 18h chaque jour.');
-    fetchSchedule();
-}, {
-    scheduled: true,
-    timezone: "Europe/Paris" 
-});
+// cron.schedule('0 18 * * *', () => {
+//     console.log('Exécution de fetchSchedule à 18h chaque jour.');
+//     fetchSchedule();
+// }, {
+//     scheduled: true,
+//     timezone: "Europe/Paris" 
+// });
 
 
 const postData = querystring.stringify({
@@ -151,7 +151,8 @@ async function processResponse(response) {
             let matiere = $(this).find('td.TCase').text().trim() || 'Matière non spécifiée';
             let profText = $(this).find('.TCProf').text().trim();
             let prof = profText.replace(/([A-Z]{2,}|[A-Z][0-9]).*$/, '').trim() || 'Prof non spécifié';
-            let classe = profText.match(/(BACHELOR.*)$/) ? profText.match(/(BACHELOR.*)$/)[0] : 'Info supplémentaire non spécifiée';
+            // let classe = profText.match(/(BACHELOR.*)$/) ? profText.match(/(BACHELOR.*)$/)[0] : 'Info supplémentaire non spécifiée';
+            let classe = profText.match(/(Cours commun.*)$/) ? profText.match(/(Cours commun.*)$/)[0] : 'Info supplémentaire non spécifiée';
 
             const startDateTime = new Date(`${formattedDate} ${startTime}`);
             const endDateTime = new Date(`${formattedDate} ${endTime}`);
@@ -170,22 +171,23 @@ async function processResponse(response) {
             data.forEach(existingEvent => {
                 const existingStart = new Date(`${formattedDate} ${existingEvent.startTime}`);
                 const existingEnd = new Date(`${formattedDate} ${existingEvent.endTime}`);
-
-              if (startDateTime.getTime() === existingStart.getTime() && 
-                endDateTime.getTime() === existingEnd.getTime() && 
-                salle === existingEvent.salle && 
-                matiere === existingEvent.matiere && 
-                prof === existingEvent.prof && 
-                classe === existingEvent.classe) {
-                isExactMatch = true;
-            }
-
-            if ((startDateTime >= existingStart && startDateTime < existingEnd) ||
-                (endDateTime > existingStart && endDateTime <= existingEnd) ||
-                (startDateTime <= existingStart && endDateTime >= existingEnd)) {
-                eventsToDelete.push(existingEvent.id);
-            }
-        });
+            
+                if (startDateTime.getTime() === existingStart.getTime() && 
+                    endDateTime.getTime() === existingEnd.getTime() && 
+                    salle === existingEvent.salle && 
+                    matiere === existingEvent.matiere && 
+                    prof === existingEvent.prof && 
+                    classe === existingEvent.classe) {
+                    isExactMatch = true;
+                }
+            
+                if (((startDateTime >= existingStart && startDateTime < existingEnd) ||
+                    (endDateTime > existingStart && endDateTime <= existingEnd) ||
+                    (startDateTime <= existingStart && endDateTime >= existingEnd)) &&
+                    classe === existingEvent.classe) {
+                    eventsToDelete.push(existingEvent.id);
+                }
+            });
 
         if (isExactMatch) {
             console.log('Même horaires. Aucun changement');
@@ -213,3 +215,6 @@ async function processResponse(response) {
         }
  } });
 }
+
+
+fetchSchedule();

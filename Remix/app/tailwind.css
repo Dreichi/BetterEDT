@@ -901,3 +901,24 @@ button.rbc-input::-moz-focus-inner {
     --ring: 212.7 26.8% 83.9%;
   }
 }
+
+.group {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column-reverse;
+}
+.group .title {
+  font-size: 10px;
+  margin: 0 auto;
+  
+}
+.group .salle {
+  margin: 0 auto;
+  font-size: 10px;
+  align-items: flex-end;
+  align-content: flex-end;
+  align-self: flex-end;
+  padding: 0;
+
+}

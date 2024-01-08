@@ -292,24 +292,37 @@ export default function Index() {
   }
 
   function CustomEvent({ event }: { event: any }) {
-    return (
-      <span>
-        <h1 className="font-bold">{event.title}</h1>
-        <p className="absolute bottom-2"> {event.salle}</p>
-      </span>
-    );
+    const durationInHours = (event.end - event.start) / (1000 * 60 * 60);
+
+    if (durationInHours < 2) {
+      return (
+        <>
+          <div className="group">
+            <h1 className="absolute top-2 right-2 text-[9px]">{event.salle}</h1>
+            <p className="title text-center">{event.title}</p>
+          </div>
+        </>
+      );
+    } else {
+      return (
+        <span>
+          <h1 className="font-bold text-xs">{event.title}</h1>
+          <p className="absolute bottom-2 text-xs"> {event.salle}</p>
+        </span>
+      );
+    }
   }
 
   return (
     <div className="flex h-screen ">
-      <div className="hidden lg:flex h-full">
+      {/* <div className="hidden lg:flex h-full">
         <Navbar />
-      </div>
-      <div className="flex-grow flex flex-col p-0 lg:p-10">
+      </div> */}
+      <div className="flex-grow flex flex-col p-0 lg:p-5">
         <select
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 m-4"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 my-4"
         >
           {classes.map((classe, index) => (
             <option key={index} value={classe}>
@@ -323,12 +336,12 @@ export default function Index() {
             events={calendarEvents}
             startAccessor="start"
             endAccessor="end"
-            defaultView="week"
+            defaultView={"week"}
             culture="fr"
             messages={messages}
             className="flex-grow"
-            min={new Date(0, 0, 0, 6, 0, 0)}
-            max={new Date(0, 0, 0, 20, 0, 0)}
+            min={new Date(0, 0, 0, 8, 0, 0)}
+            max={new Date(0, 0, 0, 19, 0, 0)}
             components={{
               toolbar: CustomToolbar,
               event: CustomEvent,
