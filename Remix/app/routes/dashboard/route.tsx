@@ -231,7 +231,7 @@ export default function Index() {
     });
   };
 
-  function CustomToolbar({
+  function CustomToolbarForMobile({
     onNavigate,
     label,
   }: {
@@ -253,6 +253,44 @@ export default function Index() {
     );
   }
 
+  function CustomToolbar({
+    onNavigate,
+    label,
+    onView,
+  }: {
+    onNavigate: Function;
+    label: string;
+    onView: Function;
+  }) {
+    return (
+      <div className="rbc-toolbar">
+        <span className="rbc-btn-group">
+          <button type="button" onClick={() => onNavigate("PREV")}>
+            Précédent
+          </button>
+          <button type="button" onClick={() => onNavigate("TODAY")}>
+            Aujourd'hui
+          </button>
+          <button type="button" onClick={() => onNavigate("NEXT")}>
+            Suivant
+          </button>
+        </span>
+        <span className="rbc-toolbar-label">{label}</span>
+        <span className="rbc-btn-group">
+          <button type="button" onClick={() => onView("week")}>
+            Semaine
+          </button>
+          <button type="button" onClick={() => onView("day")}>
+            Jour
+          </button>
+          <button type="button" onClick={() => onView("agenda")}>
+            Agenda
+          </button>
+        </span>
+      </div>
+    );
+  }
+
   function CustomEvent({ event }: { event: any }) {
     return (
       <span>
@@ -263,15 +301,15 @@ export default function Index() {
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="hidden lg:flex">
+    <div className="flex h-screen ">
+      <div className="hidden lg:flex h-full">
         <Navbar />
       </div>
-      <div className="flex-grow flex flex-col p-10">
+      <div className="flex-grow flex flex-col p-0 lg:p-10">
         <select
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
-          className="mb-4"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 m-4"
         >
           {classes.map((classe, index) => (
             <option key={index} value={classe}>
@@ -286,13 +324,13 @@ export default function Index() {
             startAccessor="start"
             endAccessor="end"
             defaultView="week"
-            style={{ height: "100%" }}
             culture="fr"
             messages={messages}
             className="flex-grow"
-            min={new Date(0, 0, 0, 5, 0, 0)}
+            min={new Date(0, 0, 0, 6, 0, 0)}
             max={new Date(0, 0, 0, 20, 0, 0)}
             components={{
+              toolbar: CustomToolbar,
               event: CustomEvent,
             }}
           />
@@ -304,14 +342,13 @@ export default function Index() {
             startAccessor="start"
             endAccessor="end"
             defaultView="day"
-            style={{ height: "100%" }}
             culture="fr"
             messages={messages}
             className="flex-grow "
             min={new Date(0, 0, 0, 5, 0, 0)}
             max={new Date(0, 0, 0, 20, 0, 0)}
             components={{
-              toolbar: CustomToolbar,
+              toolbar: CustomToolbarForMobile,
               event: CustomEvent,
             }}
           />

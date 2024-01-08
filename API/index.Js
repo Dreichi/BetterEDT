@@ -10,13 +10,13 @@ import cron from 'node-cron';
 import { google } from 'googleapis';
 
 
-// cron.schedule('0 18 * * *', () => {
-//     console.log('Exécution de fetchSchedule à 18h chaque jour.');
-//     fetchSchedule();
-// }, {
-//     scheduled: true,
-//     timezone: "Europe/Paris" 
-// });
+cron.schedule('0 18 * * *', () => {
+    console.log('Exécution de fetchSchedule à 18h chaque jour.');
+    fetchSchedule();
+}, {
+    scheduled: true,
+    timezone: "Europe/Paris" 
+});
 
 
 const postData = querystring.stringify({
@@ -151,7 +151,7 @@ async function processResponse(response) {
             let matiere = $(this).find('td.TCase').text().trim() || 'Matière non spécifiée';
             let profText = $(this).find('.TCProf').text().trim();
             let prof = profText.replace(/([A-Z]{2,}|[A-Z][0-9]).*$/, '').trim() || 'Prof non spécifié';
-            let classe = profText.match(/(BACHELOR\s[0-9]\s[CDA].*)$/) ? profText.match(/(BACHELOR\s[0-9]\s[CDA].*)$/)[0] : 'Info supplémentaire non spécifiée';
+            let classe = profText.match(/(BACHELOR.*)$/) ? profText.match(/(BACHELOR.*)$/)[0] : 'Info supplémentaire non spécifiée';
 
             const startDateTime = new Date(`${formattedDate} ${startTime}`);
             const endDateTime = new Date(`${formattedDate} ${endTime}`);
@@ -213,5 +213,3 @@ async function processResponse(response) {
         }
  } });
 }
-
-fetchSchedule();
