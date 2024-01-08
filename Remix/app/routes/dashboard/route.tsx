@@ -285,7 +285,7 @@ export default function Index() {
             events={calendarEvents}
             startAccessor="start"
             endAccessor="end"
-            defaultView="month"
+            defaultView="week"
             style={{ height: "100%" }}
             culture="fr"
             messages={messages}
