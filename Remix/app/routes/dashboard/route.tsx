@@ -297,7 +297,7 @@ export default function Index() {
             }}
           />
         </div>
-        <div className="flex lg:hidden calendar-mobile-view">
+        <div className="flex lg:hidden calendar-mobile-view h-screen">
           <Calendar
             localizer={localizer}
             events={calendarEvents}
