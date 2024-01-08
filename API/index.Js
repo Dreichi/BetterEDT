@@ -197,7 +197,7 @@ async function processResponse(response) {
                     .in('id', eventsToDelete);
 
                 console.log('Horaire modifié. Anciens événements supprimés.', eventsToDelete);
-            }
+            } 
 
             const { error: insertError } = await supabase
                 .from('EDT')
