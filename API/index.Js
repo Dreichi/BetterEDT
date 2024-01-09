@@ -9,30 +9,20 @@ import { fr } from 'date-fns/locale';
 import cron from 'node-cron';
 import { google } from 'googleapis';
 
-
-// cron.schedule('0 18 * * *', () => {
-//     console.log('Exécution de fetchSchedule à 18h chaque jour.');
-//     fetchSchedule();
-// }, {
-//     scheduled: true,
-//     timezone: "Europe/Paris" 
-// });
-
-
-const postData = querystring.stringify({
-    'username': process.env.USERNAMEEDT,
-    'password': process.env.PASSWORD,
-    '_eventId': 'submit',
-    'execution': process.env.EXECUTION_TOKEN
-});
-
 const supabaseUrl = process.env.URL_SUPABASE;
 const supabaseKey = process.env.KEY_SUPABASE;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const oldcookies = 'org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE=fr-FR';
 
-async function fetchSchedule() {
+async function fetchSchedule(username, password, profSplitString, classeMatchString) {
+
+    const postData = querystring.stringify({
+        'username': username,
+        'password': password,
+        '_eventId': 'submit',
+        'execution': process.env.EXECUTION_TOKEN
+    });
 
     try {
         const response = await got.post('https://ws-edt-cd.wigorservices.net/WebPsDyn.aspx?action=posEDTLMS&serverID=C', {
@@ -50,7 +40,7 @@ async function fetchSchedule() {
             const cookies = error.response.headers['set-cookie'];
             const ticket = cookies.find(cookie => cookie.startsWith('.DotNetCasClientAuth='));
             if (ticket) {
-                await processTicket(ticket);
+                await processTicket(ticket, profSplitString, classeMatchString);
             } else {
                 console.error('Ticket non trouvé dans l\'URL');
                 console.log(error.response.headers)
@@ -77,7 +67,7 @@ function getTuesdays(start, end) {
     return tuesdays;
 }
 
-async function processTicket(ticket) {
+async function processTicket(ticket, profSplitString, classeMatchString) {
     const combinedCookies = oldcookies + '; ' + ticket;
 
     const today = startOfToday();
@@ -87,11 +77,8 @@ async function processTicket(ticket) {
 
     const nextFourTuesdays = tuesdays.slice(0, 5);
 
-    console.log(nextFourTuesdays)
-        
     for (const tuesday of nextFourTuesdays) {
         const formattedDate = format(tuesday, 'MM/dd/yyyy');
-        console.log(formattedDate)
         const url = `https://ws-edt-cd.wigorservices.net/WebPsDyn.aspx?action=posEDTLMS&date=${formattedDate}`;
 
         try {
@@ -100,7 +87,7 @@ async function processTicket(ticket) {
                     'Cookie': combinedCookies
                 },
             });
-            await processResponse(response);
+            await processResponse(response, profSplitString, classeMatchString);
         } catch (error) {
             console.error('Erreur lors de la requête GET:', error);
         }
@@ -116,7 +103,7 @@ function parseFrenchDate(dateStr) {
     return date;
 }
 
-async function processResponse(response) {
+async function processResponse(response, profSplitString, classeMatchString) {
     const html = response.body;
     const $ = cheerio.load(html);
 
@@ -150,9 +137,9 @@ async function processResponse(response) {
             let salle = $(this).find('.TCSalle').text().trim() || 'Salle non spécifiée';
             let matiere = $(this).find('td.TCase').text().trim() || 'Matière non spécifiée';
             let profText = $(this).find('.TCProf').text().trim();
-            let prof = profText.replace(/([A-Z]{2,}|[A-Z][0-9]).*$/, '').trim() || 'Prof non spécifié';
-            // let classe = profText.match(/(BACHELOR.*)$/) ? profText.match(/(BACHELOR.*)$/)[0] : 'Info supplémentaire non spécifiée';
-            let classe = profText.match(/(Cours commun.*)$/) ? profText.match(/(Cours commun.*)$/)[0] : 'Info supplémentaire non spécifiée';
+            let prof = profText.split(profSplitString)[0].trim() || 'Prof non spécifié';
+            let classeRegex = new RegExp(`(${classeMatchString})$`);
+            let classe = profText.match(classeRegex) ? profText.match(classeRegex)[0] : 'Info supplémentaire non spécifiée';
 
             const startDateTime = new Date(`${formattedDate} ${startTime}`);
             const endDateTime = new Date(`${formattedDate} ${endTime}`);
@@ -216,5 +203,16 @@ async function processResponse(response) {
  } });
 }
 
+async function executeFetchSchedule() {
+    await fetchSchedule(process.env.USERNAMECDA, process.env.PASSWORDCDA, 'Bachelor', 'BACHELOR.*');
+    await fetchSchedule(process.env.USERNAMEASRBD, process.env.PASSWORDASRBD, 'Bachelor', 'BACHELOR.*');
+    await fetchSchedule(process.env.USERNAMEWIS, process.env.PASSWORDWIS, 'Cours', 'Cours.*');
+}
 
-fetchSchedule();
+cron.schedule('0 18 * * *', () => {
+    console.log('Exécution de executeFetchSchedule à 18h chaque jour.');
+    executeFetchSchedule();
+}, {
+    scheduled: true,
+    timezone: "Europe/Paris" 
+});

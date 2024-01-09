@@ -298,8 +298,10 @@ export default function Index() {
       return (
         <>
           <div className="group">
-            <h1 className="absolute top-2 right-2 text-[9px]">{event.salle}</h1>
-            <p className="title text-center">{event.title}</p>
+            <h1 className="absolute top-1 lg:top-2 right-1 lg:right-2 text-[12px] lg:text-[9px]">
+              {event.salle}
+            </h1>
+            <p className="title absolute bottom-1 text-center">{event.title}</p>
           </div>
         </>
       );
