@@ -15,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const oldcookies = 'org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE=fr-FR';
 
-async function fetchSchedule(username, password, profSplitString, classeMatchString) {
+async function fetchSchedule(username, password, profSplitString, classeMatchString, webhook) {
 
     const postData = querystring.stringify({
         'username': username,
@@ -40,7 +40,7 @@ async function fetchSchedule(username, password, profSplitString, classeMatchStr
             const cookies = error.response.headers['set-cookie'];
             const ticket = cookies.find(cookie => cookie.startsWith('.DotNetCasClientAuth='));
             if (ticket) {
-                await processTicket(ticket, profSplitString, classeMatchString);
+                await processTicket(ticket, profSplitString, classeMatchString, webhook);
             } else {
                 console.error('Ticket non trouvé dans l\'URL');
                 console.log(error.response.headers)
@@ -67,7 +67,7 @@ function getTuesdays(start, end) {
     return tuesdays;
 }
 
-async function processTicket(ticket, profSplitString, classeMatchString) {
+async function processTicket(ticket, profSplitString, classeMatchString, webhook) {
     const combinedCookies = oldcookies + '; ' + ticket;
 
     const today = startOfToday();
@@ -87,7 +87,7 @@ async function processTicket(ticket, profSplitString, classeMatchString) {
                     'Cookie': combinedCookies
                 },
             });
-            await processResponse(response, profSplitString, classeMatchString);
+            await processResponse(response, profSplitString, classeMatchString, webhook);
         } catch (error) {
             console.error('Erreur lors de la requête GET:', error);
         }
@@ -103,7 +103,7 @@ function parseFrenchDate(dateStr) {
     return date;
 }
 
-async function processResponse(response, profSplitString, classeMatchString) {
+async function processResponse(response, profSplitString, classeMatchString, webhook) {
     const html = response.body;
     const $ = cheerio.load(html);
 
@@ -155,6 +155,7 @@ async function processResponse(response, profSplitString, classeMatchString) {
             }
 
             let eventsToDelete = [];
+            let eventToDiscord = [];
             data.forEach(existingEvent => {
                 const existingStart = new Date(`${formattedDate} ${existingEvent.startTime}`);
                 const existingEnd = new Date(`${formattedDate} ${existingEvent.endTime}`);
@@ -173,6 +174,7 @@ async function processResponse(response, profSplitString, classeMatchString) {
                     (startDateTime <= existingStart && endDateTime >= existingEnd)) &&
                     classe === existingEvent.classe) {
                     eventsToDelete.push(existingEvent.id);
+                    eventToDiscord.push(existingEvent.startTime, " à ", existingEvent.endTime);
                 }
             });
 
@@ -185,7 +187,25 @@ async function processResponse(response, profSplitString, classeMatchString) {
                     .delete()
                     .in('id', eventsToDelete);
 
-                console.log('Horaire modifié. Anciens événements supprimés.', eventsToDelete);
+                console.log('Horaire modifié. Anciens événements supprimés.', eventsToDelete, endDateTime, startDateTime, dateOfCourse);
+
+                const DateCours = format(dateOfCourse, "EEEE dd MMMM", { locale: fr });
+
+                fetch(webhook , {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        "embeds": [
+                            {
+                              "title": "Modification d'un horaire !",
+                              "description": `Le ${DateCours} de ${eventToDiscord.join("")} => ${startTime} à ${endTime} `,
+                              "color": 5814783
+                            },
+                        ]
+                    }),
+                })
             } 
 
             const { error: insertError } = await supabase
@@ -204,9 +224,9 @@ async function processResponse(response, profSplitString, classeMatchString) {
 }
 
 async function executeFetchSchedule() {
-    await fetchSchedule(process.env.USERNAMECDA, process.env.PASSWORDCDA, 'Bachelor', 'BACHELOR.*');
-    await fetchSchedule(process.env.USERNAMEASRBD, process.env.PASSWORDASRBD, 'Bachelor', 'BACHELOR.*');
-    await fetchSchedule(process.env.USERNAMEWIS, process.env.PASSWORDWIS, 'Cours', 'Cours.*');
+    await fetchSchedule(process.env.USERNAMECDA, process.env.PASSWORDCDA, 'Bachelor', 'BACHELOR.*', process.env.WEBHOOKCDA);
+    await fetchSchedule(process.env.USERNAMEASRBD, process.env.PASSWORDASRBD, 'Bachelor', 'BACHELOR.*', process.env.WEBHOOKASRBD);
+    await fetchSchedule(process.env.USERNAMEWIS, process.env.PASSWORDWIS, 'Cours', 'Cours.*', process.env.WEBHOOKWIS);
 }
 
 cron.schedule('0 18 * * *', () => {
@@ -216,3 +236,4 @@ cron.schedule('0 18 * * *', () => {
     scheduled: true,
     timezone: "Europe/Paris" 
 });
+
