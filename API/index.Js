@@ -8,6 +8,14 @@ import { parse, setYear, format, addMonths, startOfToday, getDay, addDays } from
 import { fr } from 'date-fns/locale';
 import cron from 'node-cron';
 import { google } from 'googleapis';
+const { auth } = require('google-auth-library');
+
+const SERVICE_ACCOUNT_FILE = './secret.json';
+
+const authClient = auth.fromJSON(require(SERVICE_ACCOUNT_FILE));
+authClient.scopes = ['https://www.googleapis.com/auth/calendar'];
+
+const calendar = google.calendar({ version: 'v3', auth: authClient });
 
 const supabaseUrl = process.env.URL_SUPABASE;
 const supabaseKey = process.env.KEY_SUPABASE;
@@ -106,6 +114,13 @@ function parseFrenchDate(dateStr) {
 async function processResponse(response, profSplitString, classeMatchString, webhook) {
     const html = response.body;
     const $ = cheerio.load(html);
+    const today = startOfToday();
+    let thisThursday = today;
+    if (getDay(today) !== 4) { 
+        thisThursday = addDays(today, (4 - getDay(today) - 7) % 7);
+    }
+
+    let nextThursday = addDays(thisThursday, 7);
 
     const joursInfo = {};
     $('.Jour').each(function() {
@@ -218,22 +233,44 @@ async function processResponse(response, profSplitString, classeMatchString, web
                 console.log('Erreur lors de l\'insertion:', insertError);
             } else {
                 console.log('Nouvel événement inséré !');
+
+                let eventDate = new Date(formattedDate);
+                if (eventDate >= thisThursday && eventDate < nextThursday) {
+                    fetch(webhook , {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            "embeds": [
+                                {
+                                  "title": "Nouvel événement programmé pour la semaine prochaine",
+                                  "description": `Un nouvel événement a été ajouté pour le ${format(eventDate, "EEEE dd MMMM", { locale: fr })}.`,
+                                  "color": 5814783
+                                }
+                            ]
+                        }),
+                    });
+                }
             }
         }
  } });
 }
 
-async function executeFetchSchedule() {
-    await fetchSchedule(process.env.USERNAMECDA, process.env.PASSWORDCDA, 'Bachelor', 'BACHELOR.*', process.env.WEBHOOKCDA);
-    await fetchSchedule(process.env.USERNAMEASRBD, process.env.PASSWORDASRBD, 'Bachelor', 'BACHELOR.*', process.env.WEBHOOKASRBD);
-    await fetchSchedule(process.env.USERNAMEWIS, process.env.PASSWORDWIS, 'Cours', 'Cours.*', process.env.WEBHOOKWIS);
-}
+// async function executeFetchSchedule() {
+//     await fetchSchedule(process.env.USERNAMECDA, process.env.PASSWORDCDA, 'BACHELOR', 'BACHELOR.*', process.env.WEBHOOKCDA);
+//     await fetchSchedule(process.env.USERNAMEASRBD, process.env.PASSWORDASRBD, 'BACHELOR', 'BACHELOR.*', process.env.WEBHOOKASRBD);
+//     await fetchSchedule(process.env.USERNAMEWIS, process.env.PASSWORDWIS, 'Cours', 'Cours.*', process.env.WEBHOOKWIS);
+// }
 
-cron.schedule('0 18 * * *', () => {
-    console.log('Exécution de executeFetchSchedule à 18h chaque jour.');
-    executeFetchSchedule();
-}, {
-    scheduled: true,
-    timezone: "Europe/Paris" 
-});
+// cron.schedule('0 18 * * *', () => {
+//     console.log('Exécution de executeFetchSchedule à 18h chaque jour.');
+//     executeFetchSchedule();
+// }, {
+//     scheduled: true,
+//     timezone: "Europe/Paris" 
+// });
 
+await fetchSchedule(process.env.USERNAMECDA, process.env.PASSWORDCDA, 'BACHELOR', 'BACHELOR.*', process.env.WEBHOOK);
+await fetchSchedule(process.env.USERNAMEASRBD, process.env.PASSWORDASRBD, 'BACHELOR', 'BACHELOR.*', process.env.WEBHOOK);
+await fetchSchedule(process.env.USERNAMEWIS, process.env.PASSWORDWIS, 'Cours', 'Cours.*', process.env.WEBHOOK);
