@@ -922,10 +922,10 @@ button.rbc-input::-moz-focus-inner {
   padding: 0;
 
 }
-
-.rbc-header:last-child,
-.rbc-day-bg:last-child,
-.rbc-day-slot:last-child {
-  display: none;
+@media screen and (min-width: 1024px) {
+  .rbc-header:last-child,
+  .rbc-day-bg:last-child,
+  .rbc-day-slot:last-child {
+    display: none;
+  }
 }
-
